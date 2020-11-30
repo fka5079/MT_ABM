@@ -9,7 +9,8 @@ Assembling Furniture (bookshelf)
 import random
 from random import randint
 import numpy as np
-# from matplotlib import pyplot as plt
+import pandas as pd
+#from matplotlib import pyplot as plt
 
 class Worker:
      
@@ -28,6 +29,7 @@ class Worker:
 class Task:
     
     attempt = 0
+    #attempts = []
     errorcount = 0
     
     # Status Key
@@ -88,14 +90,15 @@ class Task:
                     if self.DSM[step, x] == "1":
                         depend.append(self.DSM[0, x])
                 # Identify connected parts after current step:
-                try:
+                try: # If there are post-dependent steps
                     depend_post = []
-                    for part in depend:
+                    for x, part in enumerate(depend):
                         if part == self.part:
-                            depend_post.append(depend[step : len(depend)])
+                            depend_post.append(depend[x : len(depend)])
+                    depend_post = depend_post[0]
                     for x, part in enumerate(depend_post):
                         self.bookshelf[self.part] = Task.stat_error
-                        self.bookshelf[part[x]] = Task.stat_error_dependent
+                        self.bookshelf[part] = Task.stat_error_dependent
                     Task.errorcount += 1
                     print(f"Step{step} completed with un-detected error in " + str(Task.attempt) + " attempt.")
                 except:
@@ -120,13 +123,15 @@ class Task:
                         depend_pre.append(depend[0 : step - 1])
                 # Identify connected parts after current step:        
                 depend_post = []
-                for part in depend:
+                for x, part in enumerate(depend):
                     if part == self.part:
-                        depend_post.append(depend[step : len(depend)])
+                        depend_post.append(depend[x : len(depend)])
+                depend_post = depend_post[0]
                         
                 try:
                     # For each preceeding step dependent on part:
                     for x, part in enumerate(depend_pre):
+                        
                         # If there are no previous errors in connected parts, attempt current step until solved:
                         if self.bookshelf[part[x]] == Task.stat_complete:
                             while self.error[0] > 0:
@@ -146,10 +151,10 @@ class Task:
                                 Task.errorcount += 2
                                 try:
                                     for part in depend_post:
-                                        self.bookshelf[part[x]] = Task.stat_error_dependent
+                                        self.bookshelf[part] = Task.stat_error_dependent
                                         self.bookshelf[self.part] = Task.stat_error
                                 except:
-                                    # When on last step, there will not be any post dependent steps
+                                    # When on last step, there won't be any post dependent steps
                                     pass
                                 print(f"Error in previous steps was not detected. Step{step} was re-attempted " + str(Task.attempt) + " times, but not completed.")
                                     
@@ -158,6 +163,7 @@ class Task:
                                 prev_step = int(part[x][4])
                                 print(f"Error detected in {part[x]}. Reattempting step{prev_step}.")
                                 part_error = random.choices( error, weights = (( 1 - self.errprob[prev_step - 1]/2), self.errprob[prev_step - 1]/2), k=1 )
+                                
                                 # If previous step is completed without any errors:
                                 if part_error == 0:
                                     self.bookshelf[part[x]] = Task.stat_complete
@@ -202,10 +208,11 @@ class Task:
                     print(f"Step{step} was completed in " + str(Task.attempt) + " attempts.")
                     
             print(self.bookshelf)              
-                
+            
+            attempts.append(int(Task.attempt))
                 
 # Initiating class
-                
+
 DM_T = ['', 'part1', 'part2', 'part3', 'part4', 'part5', 'part6', 'part7', 'part8', 'part9']
 DM_1 = ['part1', 1, 1, 0, 0, 0, 1, 0, 0, 0]
 DM_2 = ['part2', 1, 1, 1, 1, 1, 0, 1, 1, 1]
@@ -223,4 +230,15 @@ bookshelf = { "part1":0, "part2":0, "part3":0, "part4":0, "part5":0,
 
 errprob = [0.99, 0.99, 0.99, 0.99, 0.99, 0.99, 0.99, 0.99, 0.99]
 
-Task = Task(DM_mat, bookshelf, errprob)
+attempts_mat = np.empty((0, len(DM_mat)-1), int)
+
+# Run 100x
+k = 0
+while k < 100:
+    attempts = []
+    Tasks = Task(DM_mat, bookshelf, errprob)
+    attempts_mat = np.append(attempts_mat, np.array([attempts]), axis=0)
+    k += 1
+    
+attempts_df = pd.DataFrame(attempts_mat)
+attempts_df.to_csv('Number_of_Attempts.csv')
