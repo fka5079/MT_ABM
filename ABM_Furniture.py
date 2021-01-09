@@ -9,7 +9,7 @@ Assembling Furniture (bookshelf)
 import random
 from random import randint
 import numpy as np
-#import pandas as pd
+import pandas as pd
 #from matplotlib import pyplot as plt
 
 class Worker:
@@ -232,30 +232,33 @@ bookshelf = { "part1":0, "part2":0, "part3":0, "part4":0, "part5":0,
                   "part6":0, "part7":0, "part8":0, "part9":0 }
 
 # Should be dependent on task and worker
-errprob = [0.99, 0.99, 0.99, 0.99, 0.99, 0.99, 0.99, 0.99, 0.99]
+errprob = [0.00, 0.02, 0.02, 0.02, 0.02, 0.08, 0.04, 0.04, 0.04]
 
 attempts_mat = np.empty((0, len(DM_mat)-1), int)
+reattempts_mat = np.empty((0, len(DM_mat)-1), int)
+error_list_mat = np.empty((0, len(DM_mat)-1), int)
 
-attempts = []
-reattempts = [0,0,0,0,0,0,0,0,0]
-error_list = []
-Tasks = Task(DM_mat, bookshelf, errprob)
+#attempts = []
+#reattempts = [0,0,0,0,0,0,0,0,0]
+#error_list = []
+#Tasks = Task(DM_mat, bookshelf, errprob)
 
 # Run 50x
-#k = 0
-#while k < 50:
-#    attempts = []
-#    reattempts = [0,0,0,0,0,0,0,0,0]
-#    error_list = []
-#    Tasks = Task(DM_mat, bookshelf, errprob)
-#    attempts_mat = np.append(attempts_mat, np.array([attempts]), axis=0)
-#    reattempts_mat = np.append(reattempts_mat, np.array([reattempts]), axis=0)
-#    error_list_mat = np.append(error_list_mat, np.array([error_list]), axis=0)
-#    k += 1
+k = 0
+while k < 50:
+    attempts = []
+    reattempts = [0,0,0,0,0,0,0,0,0]
+    error_list = []
+    Tasks = Task(DM_mat, bookshelf, errprob)
     
-#attempts_df = pd.DataFrame(attempts_mat)
-#reattempts_df = pd.DataFrame(reattempts_mat)
-#error_list_df = pd.DataFrame(error_list_mat)
-#attempts_df.to_csv('Number_of_Attempts.csv')
-#reattempts_df.to_csv('Number_of_ReAttempts.csv')
-#error_list_df.to_csv('Number_of_Errors.csv')
+    attempts_mat = np.append(attempts_mat, np.array([attempts]), axis=0)
+    reattempts_mat = np.append(reattempts_mat, np.array([reattempts]), axis=0)
+    error_list_mat = np.append(error_list_mat, np.array([error_list]), axis=0)
+    k += 1   
+    
+attempts_df = pd.DataFrame(attempts_mat)
+reattempts_df = pd.DataFrame(reattempts_mat)
+error_list_df = pd.DataFrame(error_list_mat)
+attempts_df.to_csv('Number_of_Attempts.csv')
+reattempts_df.to_csv('Number_of_ReAttempts.csv')
+error_list_df.to_csv('Number_of_Errors.csv')
