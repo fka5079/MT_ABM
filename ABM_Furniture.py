@@ -2,7 +2,7 @@
 
 Agent Based Modelling code
 Version 2
-Assembling Furniture (bookshelf)
+Assembling Furniture (3-tier bookshelf)
 
 """
 
@@ -12,19 +12,36 @@ import numpy as np
 import pandas as pd
 #from matplotlib import pyplot as plt
 
+class PC:
+    
+    def __init__(self, overall_pc, expertise_pc, TC_s_pc, time_pc, stress_pc, accom_pc, FOD_pc, procedures_pc, processes_pc):
+        self.overall_pc = overall_pc
+        self.expertise_pc = expertise_pc
+        self.TC_s_pc = TC_s_pc
+        self.time_pc = time_pc
+        self.stress_pc = stress_pc
+        self.accom_pc = accom_pc
+        self.FOD_pc = FOD_pc
+        self.procedures_pc = procedures_pc
+        self.processes_pc = processes_pc
+
 class Worker:
      
     num_workers = 0
     
-    def __init__(self, ID, stature, BMI, experience, riskatt, selfeff,):
-        self.ID = ID
+    def __init__(self, stature, BMI, gender, expertise, TC_s, time, stress, accom, FOD, procedures, processes):
         self.stature = stature  # Stature in mm
         self.BMI = BMI
-        self.experience = experience  # Amount of relavant experience
-        self.riskatt = riskatt  # Risk Attitude
-        self.selfeff = selfeff  # Self Efficacy
+        self.gender = gender
+        self.expertise = expertise
+        self.TC_s = TC_s # input as a list for each step
+        self.time = time
+        self.stress = stress
+        self.accom = accom
+        self.FOD = FOD
+        self.procedures = procedures
+        self.processes = processes
         
-        Worker.num_workers += 1
 
 class Task:
     
@@ -216,23 +233,41 @@ class Task:
                 
 # Initiating class
 
-DM_T = ['', 'part1', 'part2', 'part3', 'part4', 'part5', 'part6', 'part7', 'part8', 'part9']
-DM_1 = ['part1', 1, 1, 0, 0, 0, 1, 0, 0, 0]
-DM_2 = ['part2', 1, 1, 1, 1, 1, 0, 1, 1, 1]
-DM_3 = ['part3', 0, 1, 1, 0, 0, 1, 0, 0, 0]
-DM_4 = ['part4', 0, 1, 0, 1, 0, 1, 0, 0, 0]
-DM_5 = ['part5', 0, 1, 0, 0, 1, 1, 0, 0, 0]
-DM_6 = ['part6', 1, 0, 1, 1, 1, 1, 1, 1, 1]
-DM_7 = ['part7', 0, 1, 0, 0, 0, 1, 1, 0, 0]
-DM_8 = ['part8', 0, 1, 0, 0, 0, 1, 0, 1, 0]
-DM_9 = ['part9', 0, 1, 0, 0, 0, 1, 0, 0, 1]
-DM_mat = np.matrix([DM_T, DM_1, DM_2, DM_3, DM_4, DM_5, DM_6, DM_7, DM_8, DM_9])
+DM_T = ['', 'part1', 'part2', 'part3', 'part4', 'part5', 'part6', 'part7', 'part8', 'part9', 'part 10', 'part 11', 'part 12', 'part 13', 'part 14', 'part 15', 'part 16', 'part 17', 'part 18', 'part 19', 'part 20']
+DM_1 =  ['part1', 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+DM_2 =  ['part2', 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] 
+DM_3 =  ['part3', 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+DM_4 =  ['part4', 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0]
+DM_5 =  ['part5', 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0]
+DM_6 =  ['part6', 1, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+DM_7 =  ['part7', 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+DM_8 =  ['part8', 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+DM_9 =  ['part9', 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+DM_10 = ['part10', 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0]
+DM_11 = ['part11', 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+DM_12 = ['part12', 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0]
+DM_13 = ['part13', 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0]
+DM_14 = ['part14', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0]
+DM_15 = ['part15', 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0]
+DM_16 = ['part16', 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0]
+DM_17 = ['part17', 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0]
+DM_18 = ['part18', 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0]
+DM_19 = ['part19', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0]
+DM_20 = ['part20', 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1]
+
+DM_mat = np.matrix([DM_T, DM_1, DM_2, DM_3, DM_4, DM_5, DM_6, DM_7, DM_8, DM_9, DM_10, DM_11, DM_12, DM_13, DM_14, DM_15, DM_16, DM_17, DM_18, DM_19, DM_20])
 
 bookshelf = { "part1":0, "part2":0, "part3":0, "part4":0, "part5":0, 
-                  "part6":0, "part7":0, "part8":0, "part9":0 }
+                  "part6":0, "part7":0, "part8":0, "part9":0, "part10":0, 
+                  "part11":0, "part12":0, "part13":0, "part14":0, "part15":0, 
+                  "part16":0, "part17":0, "part18":0, "part19":0, "part20":0 }
 
 # Should be dependent on task and worker
-errprob = [0.00, 0.02, 0.02, 0.02, 0.02, 0.08, 0.04, 0.04, 0.04]
+errprob = [0.001, 0.002, 0.002, 0.002, 0.002, 0.004, 0.004, 0.006, 0.002, 0.001, 0.002, 0.002, 0.002, 0.002, 0.004, 0.004, 0.006, 0.002, 0.008, 0.002]
+
+#PC = PC(0.85, 0.5, 0.8, 0.7, 0.7, 0.5, 0.5, 0.6, 0.5)
+#Worker = Worker(1600, 24, 'male', 1.0, 2.0, 0.1, 2.0, 0.5, 1.0, 0.5, 1.0)
+
 
 attempts_mat = np.empty((0, len(DM_mat)-1), int)
 reattempts_mat = np.empty((0, len(DM_mat)-1), int)
@@ -247,7 +282,7 @@ error_list_mat = np.empty((0, len(DM_mat)-1), int)
 k = 0
 while k < 50:
     attempts = []
-    reattempts = [0,0,0,0,0,0,0,0,0]
+    reattempts = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
     error_list = []
     Tasks = Task(DM_mat, bookshelf, errprob)
     
