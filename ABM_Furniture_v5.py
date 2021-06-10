@@ -14,14 +14,14 @@ import math
 from scipy import interpolate
 #from matplotlib import pyplot as plt
 
-class Worker:
+# class Worker:
     
-    def __init__(self, stature, BMI, gender):
-        self.stature = stature  # Stature in mm
-        self.BMI = BMI
-        self.gender = gender
+#     def __init__(self, stature, BMI, gender):
+#         self.stature = stature  # Stature in mm
+#         self.BMI = BMI
+#         self.gender = gender
 
-class Multipliers:
+class Workers:
     
     def __init__(self, time, takt_t, stress, complexity, experience, procedures, ergonomics, FOD, process):
         # Each multiplier will be in the form of a list
@@ -41,7 +41,7 @@ class Multipliers:
         interp_col1 = np.asarray([self.takt_t, 2*self.takt_t, 5*self.takt_t, 50*self.takt_t])
         interp_col2 = np.asarray([10, 1, 0.1, 0.01])
         for step in range(0, len(DM_mat)-1):
-            tck = interpolate.splrep(interp_col1, interp_col2, s=0, k=2)
+            tck = interpolate.splrep(interp_col1, interp_col2, s=0, k=3)
             self.time_mult.append(interpolate.splev(self.time[step], tck, der=0))
             psf = self.time_mult[step] * self.stress[step] * self.complexity[step] * self.experience[step] * self.procedures[step] * self.ergonomics[step] * self.FOD[step] * self.process[step]
             self.hep.append((0.01 * psf) / (0.01 * (psf - 1) + 1))
@@ -270,8 +270,8 @@ class Task:
             except:
                 pass
             # Use the new time list and call the multiplier class again to update HEP list
-            Multiplier = Multipliers(time, takt_t, stress, complexity, experience, procedures, ergonomics, FOD, process)
-            errprob = Multiplier.hep
+            Worker = Workers(time, takt_t, stress, complexity, experience, procedures, ergonomics, FOD, process)
+            errprob = Worker.hep
             
             
 
@@ -308,11 +308,11 @@ for item in range(0, len(DM_mat)-1):
     FOD.append(1)
     process.append(1)
     
-Multiplier = Multipliers(time, takt_t, stress, complexity, experience, procedures, ergonomics, FOD, process)
+Worker = Workers(time, takt_t, stress, complexity, experience, procedures, ergonomics, FOD, process)
 
 # Errprob should be dependent on multipliers
 #errprob = [0.17, 0.08, 0.42, 0.08, 0.42, 0.17, 0.17, 0.17, 0.08, 0.08, 0.17, 0.42, 0.08, 0.17, 0.08, 0.08, 0.17, 0.08, 0.08, 0.17, 0.17, 0.08, 0.42, 0.08, 0.42, 0.17, 0.17, 0.17, 0.08, 0.08, 0.17, 0.42, 0.08, 0.17, 0.08, 0.08, 0.17]
-errprob = Multiplier.hep
+errprob = Worker.hep
 
 #Worker = Worker(1600, 24, 'male', 1.0, 2.0, 0.1, 2.0, 0.5, 1.0, 0.5, 1.0)
 
