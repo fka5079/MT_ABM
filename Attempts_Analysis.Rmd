@@ -8,6 +8,8 @@ output:
 ```{r import_data, echo = FALSE}
 
 attempts <- read.csv('Number_of_Attempts.csv')
+reattempts <- read.csv('Number_of_Reattempts.csv')
+errors <- read.csv('Number_of_Errors.csv')
 
 ```
 
@@ -44,20 +46,26 @@ step9_sd <- sd(attempts$X8)
 
 ```{r graphs, echo = FALSE}
 
-plot(density(attempts$X0))
-plot(density(attempts$X1))
-plot(density(attempts$X2))
-plot(density(attempts$X3))
-plot(density(attempts$X4))
-plot(density(attempts$X5))
-plot(density(attempts$X6))
-plot(density(attempts$X7))
-plot(density(attempts$X8))
+#plot(density(attempts$X0))
+#plot(density(attempts$X1))
+#plot(density(attempts$X2))
+#plot(density(attempts$X3))
+#plot(density(attempts$X4))
+#plot(density(attempts$X5))
+#plot(density(attempts$X6))
+#plot(density(attempts$X7))
+#plot(density(attempts$X8))
 
-boxplot(attempts$X0, attempts$X1, attempts$X2, attempts$X3, attempts$X4, attempts$X5, attempts$X6, attempts$X7, attempts$X8,
-        names = c('Step 1', 'Step 2', 'Step 3', 'Step 4', 'Step 5', 'Step 6', 'Step 7', 'Step 8', 'Step 9'),
-        col = c('Brown', 'Red', 'Purple', 'Black', 'Green', 'Yellow', 'Orange', 'Pink', 'Blue'),
+boxplot(attempts$X0, reattempts$X0, attempts$X1, reattempts$X1, attempts$X2, reattempts$X2, attempts$X3, reattempts$X3, attempts$X4, reattempts$X4, attempts$X5, reattempts$X5, attempts$X6, reattempts$X6, attempts$X7, reattempts$X7, attempts$X8, reattempts$X8,
+        names = c('Step 1', 'Re 1', 'Step 2', 'Re 2', 'Step 3', 'Re 3', 'Step 4', 'Re 4', 'Step 5', 'Re 5', 'Step 6', 'Re 6', 'Step 7', 'Re 7', 'Step 8', 'Re 8', 'Step 9', 'Re 9'),
+        #col = c('Brown', 'Red', 'Purple', 'Black', 'Green', 'Yellow', 'Orange', 'Pink', 'Blue'),
         ylab ='Number of Attempts',
         main = 'Number of Attempts for Each Step Over 100 Iterations')
+
+boxplot(errors$X0, errors$X1, errors$X2, errors$X3, errors$X4, errors$X5, errors$X6, errors$X7, errors$X8,
+        names = c('Step 1', 'Step 2', 'Step 3', 'Step 4', 'Step 5', 'Step 6', 'Step 7', 'Step 8', 'Step 9'),
+        col = c('Brown', 'Red', 'Purple', 'Black', 'Green', 'Yellow', 'Orange', 'Pink', 'Blue'),
+        ylab ='Number of Errors',
+        main = 'Number of Errors for Each Step Over 100 Iterations')
 
 ```
