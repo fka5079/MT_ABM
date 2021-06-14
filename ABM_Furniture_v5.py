@@ -166,7 +166,7 @@ class Task:
                         # If there are no previous errors in connected parts, attempt current step until solved:
                         if self.bookshelf[part[x]] == Task.stat_complete:
                             while self.error[0] > 0:
-                                self.error = random.choices( error, weights = (( 1 - recurrant_errprob ),recurrant_errprob), k=1 )
+                                self.error = random.choices( error, weights = (( 1 - recurrant_errprob ), recurrant_errprob), k=1 )
                                 # Calculate the intensity of the new error
                                 self.errorintensity = randint(1, 100)
                                 # Calculate change in time based on error intensity
@@ -217,10 +217,19 @@ class Task:
                                 # If previous step is completed with error again:
                                 elif part_error == 1:
                                     # Solve until there is no error
+                                    # Update the HEP for the previous step based on deltat_sum of current step
+                                    time[x - 1] = time[step - 2]
+                                    Worker = Workers(time, takt_t, stress, complexity, experience, procedures, ergonomics, FOD, process)
+                                    errprob = Worker.hep
                                     while part_error == 1:
                                         part_error = random.choices( error, weights = ((1 - self.errprob[prev_step - 1]/2), self.errprob[prev_step - 1]/2), k=1 )
                                         reattempts[prev_step-1] += 1
-                                        # Create list of parts connected to previous erraneous part
+                                        # Calculate the intensity of the new error
+                                        self.errorintensity = randint(1, 100)
+                                        # Calculate change in time based on error intensity
+                                        deltat = self.a * math.exp((-self.errorintensity/self.b) ** self.c)
+                                        deltat_tot.append(deltat)
+                                    # Create list of parts connected to previous erraneous part
                                     depend_ = []
                                     for y in range(len(self.DSM)):
                                         if self.DSM[step, y] == "1":
