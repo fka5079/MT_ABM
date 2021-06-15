@@ -95,11 +95,6 @@ class Task:
             Task.attempt += 1
             # Error in current step based on error probabiliy specified for step
             self.error = random.choices( error, weights = ((1-self.errprob[step - 1]), self.errprob[step - 1]), k=1 )
-            # # Intensity of error
-            # self.errorintensity = randint(1, 100)
-            # # Calculate change in time based on error intensity
-            # deltat = self.a * math.exp((-self.errorintensity/self.b) ** self.c)
-            # deltat_tot.append(deltat)
             
             # If no error occurs -> mark step 2 as complete
             if self.error[0] == 0 and self.falsepositive[0] == 0:
@@ -288,6 +283,13 @@ class Task:
 DSM = pd.read_csv("cotton candy machine_DSM.csv", header = None)
 DM_mat = np.matrix(DSM)
 
+# Replace header row and column with part numbers
+parts = ['']
+for part in range(1, len(DM_mat)):
+    parts.append(f"part{part}")
+DM_mat[0] = parts
+DM_mat[:,0] = np.asarray([parts]).T
+
 bookshelf = { "part1":0, "part2":0, "part3":0, "part4":0, "part5":0, 
                   "part6":0, "part7":0, "part8":0, "part9":0, "part10":0, 
                   "part11":0, "part12":0, "part13":0, "part14":0, "part15":0, 
@@ -338,9 +340,9 @@ error_list_mat = np.empty((0, len(DM_mat)-1), int)
 # Run 100x
 k = 0
 # Constants for deltat calculation
-a = 0.5
+a = 2
 b = 10     # scale parameter
-c = 3      # shape parameter
+c = 4      # shape parameter
 while k < 50:
     attempts = []
     reattempts = []
