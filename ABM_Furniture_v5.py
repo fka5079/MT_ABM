@@ -12,6 +12,7 @@ import numpy as np
 import pandas as pd
 import math
 from scipy import interpolate
+import re
 #from matplotlib import pyplot as plt
 
 # class Worker:
@@ -34,22 +35,20 @@ class Workers:
         self.ergonomics = ergonomics
         self.FOD = FOD
         self.process = process
-        
         self.time_mult = []
         self.hep = []
         
         interp_col1 = np.asarray([self.takt_t, 2*self.takt_t, 5*self.takt_t, 50*self.takt_t])
         interp_col2 = np.asarray([10, 1, 0.1, 0.01])
+        tck = interpolate.splrep(interp_col1, interp_col2, s=0, k=3)
         for step in range(0, len(DM_mat)-1):
-            tck = interpolate.splrep(interp_col1, interp_col2, s=0, k=3)
             self.time_mult.append(interpolate.splev(self.time[step], tck, der=0))
             psf = self.time_mult[step] * self.stress[step] * self.complexity[step] * self.experience[step] * self.procedures[step] * self.ergonomics[step] * self.FOD[step] * self.process[step]
             self.hep.append((0.01 * psf) / (0.01 * (psf - 1) + 1))
-
+        
 class Task:
     
     attempt = 0
-    #attempts = []
     errorcount = 0
     
     # Status Key
@@ -82,7 +81,7 @@ class Task:
             
             recurrant_errprob = self.errprob[step - 1]/2
         
-            # Probability of false positive occuring (should be dependent on self efficacy or risk attitude)
+            # Probability of false positive error occuring (should be dependent on self efficacy or risk attitude)
             falsepos = [0, 1]
             falsepos_prob = 0.01
             self.falsepositive = random.choices( falsepos, weights = ((1-falsepos_prob), falsepos_prob), k=1 )
@@ -93,10 +92,10 @@ class Task:
             
             print(f"Attempting Step{step}.")
             Task.attempt += 1
-            # Error in current step based on error probabiliy specified for step
+            # Error status in current step based on HEP for step
             self.error = random.choices( error, weights = ((1-self.errprob[step - 1]), self.errprob[step - 1]), k=1 )
             
-            # If no error occurs -> mark step 2 as complete
+            # If no error occurs -> mark step as complete
             if self.error[0] == 0 and self.falsepositive[0] == 0:
                 self.bookshelf[self.part] = Task.stat_complete
                 print(f"Step{step} was completed with no errors in " + str(Task.attempt) + " attempt.")
@@ -130,6 +129,7 @@ class Task:
                     print(f"Step{step} completed with un-detected error in " + str(Task.attempt) + " attempt.")
                 except:
                     # Last step has no post dependent steps
+                    self.bookshelf[self.part] = Task.stat_error
                     Task.errorcount += 1
                     print(f"Step{step} completed with un-detected error in " + str(Task.attempt) + " attempt.")
                 
@@ -158,8 +158,9 @@ class Task:
                     # For each preceeding step dependent on part:
                     for x, part in enumerate(depend_pre):
                         
+                        X = int(re.findall("\d+", part)[0])    # Gives the preceding dependent step's number
                         # If there are no previous errors in connected parts, attempt current step until solved:
-                        if self.bookshelf[part[x]] == Task.stat_complete:
+                        if self.bookshelf[part[X]] == Task.stat_complete:
                             while self.error[0] > 0:
                                 self.error = random.choices( error, weights = (( 1 - recurrant_errprob ), recurrant_errprob), k=1 )
                                 # Calculate the intensity of the new error
@@ -172,33 +173,36 @@ class Task:
                             self.bookshelf[self.part] = Task.stat_complete
                             print(f"No previous errors. Step{step} completed in " + str(Task.attempt) + " attempts.")
                         
-                        # If there is an error in preceding steps:    
-                        elif self.bookshelf[part[x]] == Task.stat_error:
+                        # If there is an error in preceding part:    
+                        elif self.bookshelf[part] == Task.stat_error:
                             self.preverrdetect = randint(0, 1)
                             
-                            # If error is not detected in preceding step, current step will be attempted but cannot be solved
+                            # If error is not detected in preceding part, current step will be attempted but cannot be solved
                             if self.preverrdetect == 0:
                                 Task.attempt += 2
                                 Task.errorcount += 2
+                                # Mark all dependent stepspart after current step to have a dependency error
                                 try:
                                     for part in depend_post:
                                         self.bookshelf[part] = Task.stat_error_dependent
                                         self.bookshelf[self.part] = Task.stat_error
                                 except:
                                     # When on last step, there won't be any post dependent steps
+                                    self.bookshelf[self.part] = Task.stat_error
                                     pass
                                 print(f"Error in previous steps was not detected. Step{step} was re-attempted " + str(Task.attempt) + " times, but not completed.")
                                     
-                            # If error in previous step is detected:
+                            # If error in previous connected part is detected:
                             elif self.preverrdetect == 1:
-                                prev_step = int(part[x][4])
-                                print(f"Error detected in {part[x]}. Reattempting step{prev_step}.")
+                                prev_step = part
+                                print(f"Error detected in {part[X]}. Reattempting step{prev_step}.")
+                                # Reattempt previous connected part
                                 part_error = random.choices( error, weights = (( 1 - self.errprob[prev_step - 1]/2), self.errprob[prev_step - 1]/2), k=1 )
                                 reattempts[prev_step-1] += 1
                                 
                                 # If previous step is completed without any errors:
                                 if part_error == 0:
-                                    self.bookshelf[part[x]] = Task.stat_complete
+                                    self.bookshelf[part[X]] = Task.stat_complete
                                     # Create list of parts connected to previous erraneous part
                                     depend_ = []
                                     for y in range(1, len(self.DSM)):
@@ -206,14 +210,15 @@ class Task:
                                             depend_.append(self.DSM[0, y])
                                     for item in depend_:
                                         self.bookshelf[item] = Task.stat_default
-                                        self.bookshelf[part[x]] = Task.stat_complete
+                                        self.bookshelf[part[X]] = Task.stat_complete
                                     print(f"Step{prev_step} solved with no new errors.")
                                 
                                 # If previous step is completed with error again:
                                 elif part_error == 1:
                                     # Solve until there is no error
-                                    # Update the HEP for the previous step based on deltat_sum of current step
-                                    time[x - 1] = time[step - 2]
+                                    # Update the HEP for the previous connected part based on deltat_sum being used for current step
+                                    time[X - 1] = time[step - 1]
+                                    # Recalculate time multiplier and HEP
                                     Worker = Workers(time, takt_t, stress, complexity, experience, procedures, ergonomics, FOD, process)
                                     errprob = Worker.hep
                                     while part_error == 1:
@@ -276,8 +281,6 @@ class Task:
             # Use the new time list and call the multiplier class again to update HEP list
             Worker = Workers(time, takt_t, stress, complexity, experience, procedures, ergonomics, FOD, process)
             errprob = Worker.hep
-            
-            
 
 # Initiating class
 DSM = pd.read_csv("cotton candy machine_DSM.csv", header = None)
@@ -298,7 +301,7 @@ bookshelf = { "part1":0, "part2":0, "part3":0, "part4":0, "part5":0,
 # Call Multipliers class and define values for each multiplier for each step within the task
 # Input by user/shift supervisor
 time = []  # Available time for each task
-takt_t = 25
+takt_t = 25  # Time needed for each task
 stress = []
 complexity = []
 experience = []
@@ -310,7 +313,7 @@ process = []
 # Use following for loop to automatically fill a list with identical multiplier values
 # This portion can be updated to include a list with different values
 for item in range(0, len(DM_mat)-1):
-    time.append(30)
+    time.append(35)
     stress.append(1)
     complexity.append(2)
     experience.append(0.5)
@@ -320,30 +323,21 @@ for item in range(0, len(DM_mat)-1):
     process.append(1)
     
 Worker = Workers(time, takt_t, stress, complexity, experience, procedures, ergonomics, FOD, process)
-
 # Errprob should be dependent on multipliers
-#errprob = [0.17, 0.08, 0.42, 0.08, 0.42, 0.17, 0.17, 0.17, 0.08, 0.08, 0.17, 0.42, 0.08, 0.17, 0.08, 0.08, 0.17, 0.08, 0.08, 0.17, 0.17, 0.08, 0.42, 0.08, 0.42, 0.17, 0.17, 0.17, 0.08, 0.08, 0.17, 0.42, 0.08, 0.17, 0.08, 0.08, 0.17]
 errprob = Worker.hep
-
-#Worker = Worker(1600, 24, 'male', 1.0, 2.0, 0.1, 2.0, 0.5, 1.0, 0.5, 1.0)
 
 # Create empty matrices that can be appended for results
 attempts_mat = np.empty((0, len(DM_mat)-1), int)
 reattempts_mat = np.empty((0, len(DM_mat)-1), int)
 error_list_mat = np.empty((0, len(DM_mat)-1), int)
 
-#attempts = []
-#reattempts = [0,0,0,0,0,0,0,0,0]
-#error_list = []
-#Tasks = Task(DM_mat, bookshelf, errprob)
-
 # Run 100x
 k = 0
 # Constants for deltat calculation
-a = 2
-b = 10     # scale parameter
-c = 4      # shape parameter
-while k < 50:
+a = 1
+b = 50     # scale parameter
+c = 1      # shape parameter
+while k < 1:
     attempts = []
     reattempts = []
     m = 0
