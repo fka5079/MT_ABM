@@ -8,8 +8,11 @@ output:
 ```{r import_data, echo = FALSE}
 
 attempts <- read.csv('Number_of_Attempts.csv')
+attempts$X = NULL
 reattempts <- read.csv('Number_of_Reattempts.csv')
+reattempts$X = NULL
 errors <- read.csv('Number_of_Errors.csv')
+errors$X = NULL
 
 ```
 
@@ -62,10 +65,47 @@ boxplot(attempts$X0, reattempts$X0, attempts$X1, reattempts$X1, attempts$X2, rea
         ylab ='Number of Attempts',
         main = 'Number of Attempts for Each Step Over 100 Iterations')
 
-boxplot(errors$X0, errors$X1, errors$X2, errors$X3, errors$X4, errors$X5, errors$X6, errors$X7, errors$X8,
-        names = c('Step 1', 'Step 2', 'Step 3', 'Step 4', 'Step 5', 'Step 6', 'Step 7', 'Step 8', 'Step 9'),
+boxplot(errors$X0, errors$X1, errors$X2, errors$X3, errors$X4, errors$X5, errors$X6, errors$X7, errors$X8, errors$X9, errors$X10, errors$X11, errors$X12, errors$X13, errors$X14, errors$X15, errors$X16, errors$X17, errors$X18, errors$X19, errors$X20, errors$X21, errors$X22, errors$X23, errors$X24, errors$X25, errors$X26, errors$X27, errors$X28, errors$X29, errors$X30, errors$X31, errors$X32, errors$X33, errors$X34, errors$X35,
+        names = c(seq(36)),
         col = c('Brown', 'Red', 'Purple', 'Black', 'Green', 'Yellow', 'Orange', 'Pink', 'Blue'),
         ylab ='Number of Errors',
-        main = 'Number of Errors for Each Step Over 100 Iterations')
+        main = 'Number of Errors for Each Step Over 50 Iterations')
+
+```
+
+``` {r Results, echo = FALSE}
+
+errors <- read.csv('Number_of_Errors.csv')
+errors$X = NULL
+
+numit <- 0
+zero_error <- 0
+one_error <- 0
+large_error <- 0
+zef <- rep(0, 50)
+oef <- rep(0, 50)
+lef <- rep(0, 50)
+errors$sum = rowSums(errors)
+for (val in errors$sum) {
+  if (val == 0) {
+    zero_error <- zero_error + 1
+  }
+  if (val == 1) {
+    one_error <- one_error + 1
+  }
+  if (val >= 2) {
+    large_error <- large_error + 1
+  }
+  numit <- numit + 1
+  zef[numit] <- zero_error/(numit)
+  oef[numit] <- one_error/(numit)
+  lef[numit] <- large_error/(numit)
+}
+
+# Plot graphs
+plot(zef, type = "o", col="Orange", pch=15, ylim=c(0,1.5), main = "Error Fractions over 50 Iterations", xlab = "Number of Iterations", ylab = "Error Fractions")
+lines(oef, type = "o", col="Green", pch=15)
+lines(lef, type = "o", col="Blue", pch=15)
+legend('topright', c('0 error fraction', '1 error fraction', '>=2 error fraction'), col=c('Orange', 'Green', 'Blue'), pch = c(15, 15, 15))
 
 ```
