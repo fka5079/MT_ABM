@@ -7,6 +7,31 @@ import math
 from scipy import interpolate
 import re
 
+class Workers:
+    
+    def __init__(self, time, takt_t, stress, complexity, experience, procedures, ergonomics, FOD, process):
+        # Each multiplier will be in the form of a list
+        self.time = time
+        self.takt_t = takt_t
+        self.stress = stress
+        self.complexity = complexity
+        self.experience = experience
+        self.procedures = procedures
+        self.ergonomics = ergonomics
+        self.FOD = FOD
+        self.process = process
+        self.time_mult = []
+        self.hep = []
+        
+        interp_col1 = np.asarray([self.takt_t, 2*self.takt_t, 5*self.takt_t, 50*self.takt_t])
+        interp_col2 = np.asarray([10, 1, 0.1, 0.01])
+        tck = interpolate.splrep(interp_col1, interp_col2, s=0, k=3)
+        for step in range(0, len(DM_mat)-1):
+            self.time_mult.append(interpolate.splev(self.time[step], tck, der=0))
+            psf = self.time_mult[step] * self.stress[step] * self.complexity[step] * self.experience[step] * self.procedures[step] * self.ergonomics[step] * self.FOD[step] * self.process[step]
+            self.hep.append((0.01 * psf) / (0.01 * (psf - 1) + 1))
+
+
 class Task:
     
     def __init__(self, DSM, bookshelf, errprob, a, b, c):
@@ -79,6 +104,12 @@ class Task:
                     # Use "try" because the last step in a task will not have any post dependent steps
                     elif self.error[0] == 1 and self.errdetect == 0:
                         Task.errorcount += 1
+                        # Update deltat due to error that occured during first attempt
+                        self.errorintensity = randint(1, 100)
+                        # Calculate change in time based on error intensity
+                        deltat = self.a * math.exp((-self.errorintensity/self.b) ** self.c)
+                        deltat_tot.append(deltat)
+                        
                         try:
                             for x, dep_part in enumerate(depend_post):
                                 self.bookshelf[dep_part] = Task.stat_error_dependent  # Update staus of post connected steps
@@ -92,7 +123,12 @@ class Task:
                     # Update time multiplier and error probability based on intensity of error
                     elif self.error[0] == 1 and self.errdetect == 1:
                         Task.errorcount += 1
-                        
+                        # Update deltat due to error that occured during first attempt
+                        self.errorintensity = randint(1, 100)
+                        # Calculate change in time based on error intensity
+                        deltat = self.a * math.exp((-self.errorintensity/self.b) ** self.c)
+                        deltat_tot.append(deltat)
+                            
                         # Possibility that the error that occured is a false positive
                         self.falsepositive = random.choices( falsepos, weights = ((1-falsepos_prob), falsepos_prob), k=1 )
                         if self.falsepositive == 1:
@@ -124,16 +160,134 @@ class Task:
                     # Increase error counter because first attempt at step revealed dependency issue
                     Task.errorcount += 1
                     print(f"Dependency error detcted in Step{step}. Checking previous connected parts.")
-                    
-                    status_track = []
-                    for x, part in enumerate(depend_pre):
-                        Task.errorcount += 1
+                    # Calculate the intensity of the error
+                    self.errorintensity = randint(1, 100)
+                    # Calculate change in time based on error intensity
+                    deltat = self.a * math.exp((-self.errorintensity/self.b) ** self.c)
+                    deltat_tot.append(deltat)
                         
-                        # Calculate the intensity of the error
-                        self.errorintensity = randint(1, 100)
-                        # Calculate change in time based on error intensity
-                        deltat = self.a * math.exp((-self.errorintensity/self.b) ** self.c)
-                        deltat_tot.append(deltat)
+                    # A function that is called when a part has a dependency error.
+                    def dependency(or_part, depend_prelist, depend_postlist):
+                        or_step = int(re.findall("\d+", str(or_part))[0])
+                         
+                        stat_track = []
+                        for x, part_1r in enumerate(depend_prelist):
+                            step_1r = int(re.findall("\d+", str(part_1r))[0])  # Gives the number for current pre-dependent step & pep = prev erraneous part
+                    
+                            depend_1r = []  # List of parts dependent on part_1r
+                            for y in range(1, len(self.DSM)):
+                                if self.DSM[step_1r, y] == "1":
+                                    depend_1r.append(self.DSM[0, y])
+                            for x, dep_part in enumerate(depend_1r):
+                                if dep_part == part_1r:
+                                    # Identify connected parts prior to current step:
+                                    depend_pre_1r = depend_1r[0 : x]
+                                    # Identify connected parts after current step:        
+                                    depend_post_1r = depend_1r[x+1 : len(depend_1r)]
+                            
+                            # When part_1r has a dependency error
+                            if self.bookshelf[part_1r] == Task.stat_error_dependent:
+                                # Attempt Part_1r but it cannot be solved until root error is solved.
+                                attempts[step_1r - 1] += 1
+                                error_list[step_1r - 1] += 1
+                                
+                                # Update hep of step_1r based on time available for step and current time elapsed.
+                                # time[step_1r - 1] = time[or_step - 1] - sum(deltat_tot)
+                                # Worker = Workers(time, takt_t, stress, complexity, experience, procedures, ergonomics, FOD, process)
+                                # self.errprob = Worker.hep
+                                
+                                # Calculate deltat due to error in part_1r.
+                                self.errorintensity = randint(1, 100)
+                                # Calculate change in time based on error intensity
+                                deltat = self.a * math.exp((-self.errorintensity/self.b) ** self.c)
+                                deltat_tot.append(deltat)
+                                
+                                print(f"{part_1r} has a dependency error. Checking previous connected parts.")
+                                dependency(part_1r, depend_pre_1r, depend_post_1r)
+                                
+                            # When part_1r has an error
+                            elif self.bookshelf[part_1r] == Task.stat_error:
+                                                                
+                                # There is a chance for whether the error in part_1r is detected or not.
+                                self.errdetect_1r = randint(0, 1)
+                                
+                                # When the error in part_1r is not detected, the original part is re-attempted but cannot be solved.
+                                if self.errdetect_1r == 0:
+                                    print(f"{part_1r} has an error that was not detected. Attempting next part.")
+                                    
+                                elif self.errdetect_1r == 1:
+                                    print(f"Error found in {part_1r}. Re-attempting {part_1r}.")
+                                    attempts[step_1r - 1] += 1
+                                    
+                                    # Update hep of step_1r based on time available for step minus current time elapsed.
+                                    time[step_1r - 1] = time[or_step - 1] - sum(deltat_tot)
+                                    Worker = Workers(time, takt_t, stress, complexity, experience, procedures, ergonomics, FOD, process)
+                                    self.errprob = Worker.hep
+                                    
+                                    self.error_1r = random.choices( error, weights = ((1-self.errprob[step_1r - 1]), self.errprob[step_1r - 1]), k=1 )
+                                    
+                                    if self.error_1r == 0:
+                                        print(f"Error in {part_1r} was solved.")
+                                        self.bookshelf[part_1r] == Task.stat_complete
+                                        
+                                    elif self.error_1r == 1:
+                                        print(f"Error reoccured in {part_1r}. Re-attempting {part_1r}.")
+                                        error_list[step_1r - 1] += 1
+                                        
+                                        # Calculate deltat due to error in part_1r.
+                                        self.errorintensity = randint(1, 100)
+                                        # Calculate change in time based on error intensity
+                                        deltat = self.a * math.exp((-self.errorintensity/self.b) ** self.c)
+                                        deltat_tot.append(deltat)
+                                        
+                                        # Update hep of step_1r based on time available for step minus current time elapsed.
+                                        time[step_1r - 1] = time[or_step - 1] - sum(deltat_tot)
+                                        Worker = Workers(time, takt_t, stress, complexity, experience, procedures, ergonomics, FOD, process)
+                                        self.errprob = Worker.hep
+                                    
+                                        self.error_1r = random.choices( error, weights = ((1-self.errprob[step_1r - 1]), self.errprob[step_1r - 1]), k=1 )
+                                        
+                                        while self.error_1r == 1:
+                                            error_list[step_1r - 1] += 1
+                                            attempts[step_1r - 1] += 1
+                                            
+                                            # Update hep of step_1r based on time available for step minus current time elapsed.
+                                            time[step_1r - 1] = time[or_step - 1] - sum(deltat_tot)
+                                            Worker = Workers(time, takt_t, stress, complexity, experience, procedures, ergonomics, FOD, process)
+                                            self.errprob = Worker.hep
+                                    
+                                            self.error_1r = random.choices( error, weights = ((1-self.errprob[step_1r - 1]), self.errprob[step_1r - 1]), k=1 )
+                                            
+                                            # Calculate deltat due to error in part_1r.
+                                            self.errorintensity = randint(1, 100)
+                                            # Calculate change in time based on error intensity
+                                            deltat = self.a * math.exp((-self.errorintensity/self.b) ** self.c)
+                                            deltat_tot.append(deltat)
+                                        
+                                        self.bookshelf[part_1r] = Task.stat_complete
+                                        for dep_part in depend_postlist:
+                                            if dep_part == or_step:
+                                                break
+                                            elif dep_part != step:
+                                                Attempt(dep_part)
+                                        
+                            elif self.bookshelf[part_1r] == Task.stat_complete:
+                                pass
+                            
+                            stat_track.append(int(self.bookshelf[part_1r]))
+                        
+                        stat = [k for k in stat_track if k == 1]
+                        if stat in stat_track == 1:
+                            
+                            
+                            
+                                    
+                                    
+                                    
+                                    
+                                
+                            
+                                
                         
 
 
