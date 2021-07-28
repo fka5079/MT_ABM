@@ -34,6 +34,16 @@ class Workers:
 
 class Task:
     
+    attempt = 0
+    errorcount = 0
+    
+    # Status Key
+    stat_complete = 4
+    # stat_error_falsepos = 3
+    stat_error_dependent = 2
+    stat_error = 1
+    stat_default = 0
+    
     def __init__(self, DSM, bookshelf, errprob, a, b, c):
         self.DSM = DSM
         self.bookshelf = bookshelf
@@ -42,27 +52,17 @@ class Task:
         self.b = b  # deltat calculation constants
         self.c = c  # deltat calculation constants
         self.steps = len(self.DSM) - 1
-        
-        attempt = 0
-        errorcount = 0
-        
-        # Status Key
-        stat_complete = 4
-        # stat_error_falsepos = 3
-        stat_error_dependent = 2
-        stat_error = 1
-        stat_default = 0
-        
-        # A Function that simulates a worker attempting a step.
-        def Attempt(partx):
                 
-            # Some variables and lists to keep track
-            error = [0, 1]
-            falsepos = [0, 1]
-            falsepos_prob = 0.01  # Probability of a false positive error occuring
-            deltat_tot = []  # A list that helps sum deltat at the end of a step
+        # Some variables and lists to keep track
+        error = [0, 1]
+        falsepos = [0, 1]
+        falsepos_prob = 0.01  # Probability of a false positive error occuring
+        deltat_tot = []  # A list that helps sum deltat at the end of a step
             
-            for step in range(1, self.steps + 1):
+        for step in range(1, self.steps + 1):
+                
+            # A Function that simulates a worker attempting a step.
+            def Attempt(partx):
                 
                 self.part = partx
                 # HEP when a step is being reattempted after an error is detected
@@ -263,24 +263,131 @@ class Task:
                                             # Calculate change in time based on error intensity
                                             deltat = self.a * math.exp((-self.errorintensity/self.b) ** self.c)
                                             deltat_tot.append(deltat)
-                                        
+                                            
                                         self.bookshelf[part_1r] = Task.stat_complete
                                         for dep_part in depend_postlist:
                                             if dep_part == or_step:
                                                 break
                                             elif dep_part != step:
                                                 Attempt(dep_part)
-                                        
+                                                
                             elif self.bookshelf[part_1r] == Task.stat_complete:
                                 pass
                             
                             stat_track.append(int(self.bookshelf[part_1r]))
                         
-                        stat = [k for k in stat_track if k == 1]
-                        if stat in stat_track == 1:
-                            
-                            
-                            
+                        # stat = [k for k in stat_track if k == 1]
+                        for stat in stat_track:
+                            if stat == Task.stat_error or stat == Task.stat_error_dependent:
+                                self.bookshelf[or_part] = Task.stat_error_dependent
+                                for dep_part in depend_postlist:
+                                    self.bookshelf[dep_part] = Task.stat_error_dependent
+                                break
+                            else:
+                                self.bookshelf[or_step] = Task.stat_complete
+
+
+                    dependency(self.part, depend_pre, depend_post)
+                    
+            Attempt(f"part{step}")
+                
+            attempts.append(int(Task.attempt))
+            error_list.append(int(Task.errorcount))
+             
+            # Add all delta_t values saved for this step
+            # This constant gives the total change in time that will affect the next step and can be used to calculate new available time
+            deltat_sum = sum(deltat_tot)
+            # Update the time input for multiplier class; this works for all steps except the last step
+            try:
+                time[step] -= deltat_sum     # Subtract time lost in error from next step
+            except:
+                pass
+            # Use the new time list and call the multiplier class again to update HEP list
+            Worker = Workers(time, takt_t, stress, complexity, experience, procedures, ergonomics, FOD, process)
+            self.errprob = Worker.hep        
+
+
+# Initiating class
+DSM = pd.read_csv("cotton candy machine_DSM.csv", header = None)
+DM_mat = np.matrix(DSM)
+
+# Replace header row and column with part numbers
+parts = ['']
+for part in range(1, len(DM_mat)):
+    parts.append(f"part{part}")
+DM_mat[0] = parts
+DM_mat[:,0] = np.asarray([parts]).T
+
+bookshelf = { "part1":0, "part2":0, "part3":0, "part4":0, "part5":0, 
+                  "part6":0, "part7":0, "part8":0, "part9":0, "part10":0, 
+                  "part11":0, "part12":0, "part13":0, "part14":0, "part15":0, 
+                  "part16":0, "part17":0, "part18":0, "part19":0, "part20":0,
+                  "part21":0, "part22":0, "part23":0,  "part24":0, "part25":0, "part26":0,
+                  "part27":0, "part28":0, "part29":0, "part30":0, "part31":0,
+                  "part32":0, "part33":0, "part34":0, "part35":0, "part36":0}
+
+# Call Multipliers class and define values for each multiplier for each step within the task
+# Input by user/shift supervisor
+time = []  # Available time for each task
+takt_t = 25  # Time needed for each task
+stress = []
+complexity = []
+experience = []
+procedures = []
+ergonomics = []
+FOD = []
+process = []
+
+# Use following for loop to automatically fill a list with identical multiplier values
+# This portion can be updated to include a list with different values
+for item in range(0, len(DM_mat)-1):
+    time.append(35)
+    stress.append(1)
+    complexity.append(2)
+    experience.append(0.5)
+    procedures.append(1)
+    ergonomics.append(1)
+    FOD.append(1)
+    process.append(1)
+    
+Worker = Workers(time, takt_t, stress, complexity, experience, procedures, ergonomics, FOD, process)
+# Errprob should be dependent on multipliers
+errprob = Worker.hep
+
+# Create empty matrices that can be appended for results
+attempts_mat = np.empty((0, len(DM_mat)-1), int)
+# reattempts_mat = np.empty((0, len(DM_mat)-1), int)
+error_list_mat = np.empty((0, len(DM_mat)-1), int)
+
+# Run 100x
+k = 0
+# Constants for deltat calculation
+a = 1
+b = 50     # scale parameter
+c = 1      # shape parameter
+while k < 1:
+    attempts = []
+    # reattempts = []
+    m = 0
+    while m < len(DM_mat) - 1:
+        # reattempts.append(0)
+        m += 1
+    error_list = []
+    Tasks = Task(DM_mat, bookshelf, errprob, a, b, c)
+    
+    attempts_mat = np.append(attempts_mat, np.array([attempts]), axis=0)
+    # reattempts_mat = np.append(reattempts_mat, np.array([reattempts]), axis=0)
+    error_list_mat = np.append(error_list_mat, np.array([error_list]), axis=0)
+    print(bookshelf)
+    print(f"Iteration {k+1} completed.")
+    k += 1
+    
+attempts_df = pd.DataFrame(attempts_mat)
+# reattempts_df = pd.DataFrame(reattempts_mat)
+error_list_df = pd.DataFrame(error_list_mat)
+attempts_df.to_csv('Number_of_Attempts.csv')
+# reattempts_df.to_csv('Number_of_ReAttempts.csv')
+error_list_df.to_csv('Number_of_Errors.csv')
                                     
                                     
                                     
