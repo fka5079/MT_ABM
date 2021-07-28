@@ -88,7 +88,7 @@ class Task:
                     depend_post = depend[x+1 : len(depend)]
             
             # Reset counters
-            ArithmeticError(args)Task.attempt = 0
+            Task.attempt = 0
             Task.errorcount = 0
             
             print(f"Attempting Step{step}.")
