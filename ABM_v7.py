@@ -25,7 +25,9 @@ class Workers:
         
         interp_col1 = np.asarray([self.takt_t, 2*self.takt_t, 5*self.takt_t, 50*self.takt_t])
         interp_col2 = np.asarray([10, 1, 0.1, 0.01])
+        
         tck = interpolate.splrep(interp_col1, interp_col2, s=0, k=3)
+        
         for step in range(0, len(DM_mat)-1):
             self.time_mult.append(interpolate.splev(self.time[step], tck, der=0))
             psf = self.time_mult[step] * self.stress[step] * self.complexity[step] * self.experience[step] * self.procedures[step] * self.ergonomics[step] * self.FOD[step] * self.process[step]
@@ -44,7 +46,8 @@ class Task:
     stat_error = 1
     stat_default = 0
     
-    def __init__(self, DSM, bookshelf, errprob, a, b, c):
+    def __init__(self, Worker, DSM, bookshelf, errprob, a, b, c):
+        self.Worker = Worker
         self.DSM = DSM
         self.bookshelf = bookshelf
         self.errprob = errprob
@@ -143,7 +146,7 @@ class Task:
                             deltat_tot.append(deltat)
                             print(f"Error was detected in Step{step}.")
                             # Re-attempt task until detected error is solved
-                            while self.error == 1:
+                            while self.error[0] == 1:
                                 self.error = random.choices( error, weights = (( 1 - recurrant_errprob ), recurrant_errprob), k=1 )
                                 # Calculate the intensity of the new error
                                 self.errorintensity = randint(1, 100)
@@ -191,11 +194,6 @@ class Task:
                                 attempts[step_1r - 1] += 1
                                 error_list[step_1r - 1] += 1
                                 
-                                # Update hep of step_1r based on time available for step and current time elapsed.
-                                # time[step_1r - 1] = time[or_step - 1] - sum(deltat_tot)
-                                # Worker = Workers(time, takt_t, stress, complexity, experience, procedures, ergonomics, FOD, process)
-                                # self.errprob = Worker.hep
-                                
                                 # Calculate deltat due to error in part_1r.
                                 self.errorintensity = randint(1, 100)
                                 # Calculate change in time based on error intensity
@@ -221,16 +219,17 @@ class Task:
                                     
                                     # Update hep of step_1r based on time available for step minus current time elapsed.
                                     time[step_1r - 1] = time[or_step - 1] - sum(deltat_tot)
-                                    Worker = Workers(time, takt_t, stress, complexity, experience, procedures, ergonomics, FOD, process)
-                                    self.errprob = Worker.hep
+                                    self.Worker = Workers(time, takt_t, stress, complexity, experience, procedures, ergonomics, FOD, process)
+                                    self.errprob = self.Worker.hep
+                                    errprob = self.errprob
                                     
-                                    self.error_1r = random.choices( error, weights = ((1-self.errprob[step_1r - 1]), self.errprob[step_1r - 1]), k=1 )
+                                    self.error_1r = random.choices( error, weights = ((1 - self.errprob[step_1r - 1]), self.errprob[step_1r - 1]), k=1 )
                                     
-                                    if self.error_1r == 0:
+                                    if self.error_1r[0] == 0:
                                         print(f"Error in {part_1r} was solved.")
                                         self.bookshelf[part_1r] == Task.stat_complete
                                         
-                                    elif self.error_1r == 1:
+                                    elif self.error_1r[0] == 1:
                                         print(f"Error reoccured in {part_1r}. Re-attempting {part_1r}.")
                                         error_list[step_1r - 1] += 1
                                         
@@ -242,19 +241,23 @@ class Task:
                                         
                                         # Update hep of step_1r based on time available for step minus current time elapsed.
                                         time[step_1r - 1] = time[or_step - 1] - sum(deltat_tot)
-                                        Worker = Workers(time, takt_t, stress, complexity, experience, procedures, ergonomics, FOD, process)
-                                        self.errprob = Worker.hep
+                                        self.Worker = Workers(time, takt_t, stress, complexity, experience, procedures, ergonomics, FOD, process)
+                                        self.errprob = self.Worker.hep
+                                        errprob = self.errprob
                                     
                                         self.error_1r = random.choices( error, weights = ((1-self.errprob[step_1r - 1]), self.errprob[step_1r - 1]), k=1 )
                                         
-                                        while self.error_1r == 1:
+                                        while self.error_1r[0] == 1:
                                             error_list[step_1r - 1] += 1
                                             attempts[step_1r - 1] += 1
                                             
+                                            print(f"Error in Step{step_1r} re-occured. Re-attempying step.")
+                                            
                                             # Update hep of step_1r based on time available for step minus current time elapsed.
                                             time[step_1r - 1] = time[or_step - 1] - sum(deltat_tot)
-                                            Worker = Workers(time, takt_t, stress, complexity, experience, procedures, ergonomics, FOD, process)
-                                            self.errprob = Worker.hep
+                                            self.Worker = Workers(time, takt_t, stress, complexity, experience, procedures, ergonomics, FOD, process)
+                                            self.errprob = self.Worker.hep
+                                            errprob = self.errprob
                                     
                                             self.error_1r = random.choices( error, weights = ((1-self.errprob[step_1r - 1]), self.errprob[step_1r - 1]), k=1 )
                                             
@@ -264,12 +267,16 @@ class Task:
                                             deltat = self.a * math.exp((-self.errorintensity/self.b) ** self.c)
                                             deltat_tot.append(deltat)
                                             
-                                        self.bookshelf[part_1r] = Task.stat_complete
-                                        for dep_part in depend_postlist:
-                                            if dep_part == or_step:
-                                                break
-                                            elif dep_part != step:
-                                                Attempt(dep_part)
+                                    self.bookshelf[part_1r] = Task.stat_complete
+
+                                    print(f"Re-attempting parts that are post dependent on {part_1r}.")
+                                    for dep_part in depend_postlist:
+                                        if dep_part == or_part:
+                                            break
+                                        else:
+                                            Attempt(dep_part)
+                                    self.bookshelf[or_part] = Task.stat_default
+                                    Attempt(or_part)
                                                 
                             elif self.bookshelf[part_1r] == Task.stat_complete:
                                 pass
@@ -279,13 +286,13 @@ class Task:
                         # stat = [k for k in stat_track if k == 1]
                         for stat in stat_track:
                             if stat == Task.stat_error or stat == Task.stat_error_dependent:
+                                print("Either an error or a dependency error was not solved.")
                                 self.bookshelf[or_part] = Task.stat_error_dependent
                                 for dep_part in depend_postlist:
                                     self.bookshelf[dep_part] = Task.stat_error_dependent
                                 break
                             else:
-                                self.bookshelf[or_step] = Task.stat_complete
-
+                                self.bookshelf[or_part] = Task.stat_complete
 
                     dependency(self.part, depend_pre, depend_post)
                     
@@ -303,8 +310,9 @@ class Task:
             except:
                 pass
             # Use the new time list and call the multiplier class again to update HEP list
-            Worker = Workers(time, takt_t, stress, complexity, experience, procedures, ergonomics, FOD, process)
-            self.errprob = Worker.hep        
+            self.Worker = Workers(time, takt_t, stress, complexity, experience, procedures, ergonomics, FOD, process)
+            self.errprob = self.Worker.hep
+            errprob = self.errprob
 
 
 # Initiating class
@@ -373,7 +381,7 @@ while k < 1:
         # reattempts.append(0)
         m += 1
     error_list = []
-    Tasks = Task(DM_mat, bookshelf, errprob, a, b, c)
+    Tasks = Task(Worker, DM_mat, bookshelf, errprob, a, b, c)
     
     attempts_mat = np.append(attempts_mat, np.array([attempts]), axis=0)
     # reattempts_mat = np.append(reattempts_mat, np.array([reattempts]), axis=0)
@@ -388,18 +396,3 @@ error_list_df = pd.DataFrame(error_list_mat)
 attempts_df.to_csv('Number_of_Attempts.csv')
 # reattempts_df.to_csv('Number_of_ReAttempts.csv')
 error_list_df.to_csv('Number_of_Errors.csv')
-                                    
-                                    
-                                    
-                                    
-                                
-                            
-                                
-                        
-
-
-
-
-
-
-                        
