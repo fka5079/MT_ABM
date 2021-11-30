@@ -67,9 +67,10 @@ class Task:
         falsepos = [0, 1]
         falsepos_prob = 0.01  # Probability of a false positive error occuring
         
-        deltat_tot = []
         
         for step in range(1, self.steps + 1):
+            
+            deltat_tot = []
             
             self.part = f'part{step}'
             # HEP when a step is being reattempted after an error is detected
@@ -239,8 +240,8 @@ class Task:
                             self.bookshelf[pep] = Task.stat_complete                            
                     
                     dependency(part)
-                    print(part)
-                    print(self.bookshelf[part])
+                    #print(part)
+                    #print(self.bookshelf[part])
                     status_track.append(self.bookshelf[part])
                 
                 stat_counter = sum(status_track) * (len(depend_pre) + 1)
@@ -331,7 +332,7 @@ k = 0
 a = 1
 b = 50     # scale parameter
 c = 1      # shape parameter
-while k < 1:
+while k < 2:
     attempts = []
     reattempts = []
     m = 0
