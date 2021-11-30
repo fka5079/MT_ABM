@@ -1,0 +1,103 @@
+---
+title: "Task Length Analysis"
+author: "Fariha Azhar"
+date: "10/28/2021"
+output: html_document
+---
+
+```{r import_data, echo = FALSE}
+
+errors <- read.csv('C:\\Users\\Fariha\\Desktop\\Mack Trucks Research\\ABM_Bookshelf\\MT_ABM\\Results\\DSM2_a1b90c2\\Changing Task Lengths\\Number_of_Errors.csv')
+errors$X = NULL
+
+errorse1 <- read.csv('C:\\Users\\Fariha\\Desktop\\Mack Trucks Research\\ABM_Bookshelf\\MT_ABM\\Results\\DSM2_a1b90c2\\Changing Task Lengths\\Number_of_Errors_e1.csv')
+errorse1$X = NULL
+
+errorse2 <- read.csv('C:\\Users\\Fariha\\Desktop\\Mack Trucks Research\\ABM_Bookshelf\\MT_ABM\\Results\\DSM2_a1b90c2\\Changing Task Lengths\\Number_of_Errors_e2.csv')
+errorse2$X = NULL
+
+errorse3 <- read.csv('C:\\Users\\Fariha\\Desktop\\Mack Trucks Research\\ABM_Bookshelf\\MT_ABM\\Results\\DSM2_a1b90c2\\Changing Task Lengths\\Number_of_Errors_e3.csv')
+errorse3$X = NULL
+
+errorsc1 <- read.csv('C:\\Users\\Fariha\\Desktop\\Mack Trucks Research\\ABM_Bookshelf\\MT_ABM\\Results\\DSM2_a1b90c2\\Changing Task Lengths\\Number_of_Errors_c1.csv')
+errorsc1$X = NULL
+
+errorsc2 <- read.csv('C:\\Users\\Fariha\\Desktop\\Mack Trucks Research\\ABM_Bookshelf\\MT_ABM\\Results\\DSM2_a1b90c2\\Changing Task Lengths\\Number_of_Errors_c2.csv')
+errorsc2$X = NULL
+
+errorsc3 <- read.csv('C:\\Users\\Fariha\\Desktop\\Mack Trucks Research\\ABM_Bookshelf\\MT_ABM\\Results\\DSM2_a1b90c2\\Changing Task Lengths\\Number_of_Errors_c3.csv')
+errorsc3$X = NULL
+
+```
+
+
+```{r Histogram, echo = False}
+
+# Calculate sum
+errors$sum = rowSums(errors)
+errorse1$sum = rowSums(errorse1)
+errorse2$sum = rowSums(errorse2)
+errorse3$sum = rowSums(errorse3)
+errorsc1$sum = rowSums(errorsc1)
+errorsc2$sum = rowSums(errorsc2)
+errorsc3$sum = rowSums(errorsc3)
+
+# Plot the graphs
+old.par <- par(mfrow=c(3,3))
+
+hist(as.integer(errors$sum), main = NULL, xlab = NULL, ylab = NULL, xlim = c(0,100), ylim = c(0, 500), col = "skyblue3", breaks=max(errors))
+legend("topright", c("DSM 2"), fill="skyblue3")
+
+hist(as.integer(errorse1$sum), main = NULL, xlab = NULL, ylab = NULL, xlim = c(0,100), ylim = c(0, 500), col = "skyblue3", breaks=max(errorse1))
+legend("topright", c("DSM 2 exp 1"), fill="skyblue3")
+
+hist(as.integer(errorse2$sum), main = NULL, xlab = NULL, ylab = NULL, xlim = c(0,100), ylim = c(0, 500), col = "skyblue3", breaks=max(errorse2))
+legend("topright", c("DSM 2 exp 2"), fill="skyblue3")
+
+hist(as.integer(errorse3$sum), main = NULL, xlab = NULL, ylab = NULL, xlim = c(0,100), ylim = c(0, 500), col = "skyblue3", breaks=max(errorse3))
+legend("topright", c("DSM 2 exp 3"), fill="skyblue3")
+
+hist(as.integer(errorsc1$sum), main = NULL, xlab = NULL, ylab = NULL, xlim = c(0,100), ylim = c(0, 500), col = "skyblue3", breaks=max(errorsc1))
+legend("topright", c("DSM 2 con 1"), fill="skyblue3")
+
+hist(as.integer(errorsc2$sum), main = NULL, xlim = c(0,100), ylim = c(0, 500), col = "skyblue3", xlab = NULL, ylab = NULL, breaks=max(errorsc2))
+legend("topright", c("DSM 2 con 2"), fill="skyblue3")
+
+hist(as.integer(errorsc3$sum), main = NULL, xlim = c(0,100), ylim = c(0, 500), col = "skyblue3", xlab = "Total Number of Errors", breaks=max(errorsc3))
+legend("topright", c("DSM 2 con 3"), fill="skyblue3")
+
+mtext("Error Frequency over 1000 Reps", side = 3, line = -1.5, outer = TRUE)
+par(old.par)
+
+```
+
+```{r KS Test, echo False}
+
+ks.test(errorse1$sum, errors$sum)
+ks.test(errorse2$sum, errors$sum)
+ks.test(errorse3$sum, errors$sum)
+ks.test(errorsc1$sum, errors$sum)
+ks.test(errorsc2$sum, errors$sum)
+ks.test(errorsc3$sum, errors$sum)
+
+ks.test(errorse2$sum, errorse1$sum)
+ks.test(errorse3$sum, errorse1$sum)
+ks.test(errorsc1$sum, errorse1$sum)
+ks.test(errorsc2$sum, errorse1$sum)
+ks.test(errorsc3$sum, errorse1$sum)
+
+ks.test(errorse3$sum, errorse2$sum)
+ks.test(errorsc1$sum, errorse2$sum)
+ks.test(errorsc2$sum, errorse2$sum)
+ks.test(errorsc3$sum, errorse2$sum)
+
+ks.test(errorsc1$sum, errorse3$sum)
+ks.test(errorsc2$sum, errorse3$sum)
+ks.test(errorsc3$sum, errorse3$sum)
+
+ks.test(errorsc2$sum, errorsc1$sum)
+ks.test(errorsc3$sum, errorsc1$sum)
+
+ks.test(errorsc3$sum, errorsc2$sum)
+
+```
